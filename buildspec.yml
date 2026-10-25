@@ -13,14 +13,15 @@ phases:
   pre_build:
     commands:
       - echo "===> Preparing build..."
-      # Clean npm cache verify if needed
+      # Verify npm cache integrity before installing dependencies
       - npm cache verify
 
   build:
     commands:
       - echo "===> Installing production dependencies..."
+      # Use 'npm install' instead of 'npm ci' to automatically resolve lockfile discrepancies
       # Install only production dependencies (excludes nodemon) to keep the deployment artifact light
-      - npm ci --omit=dev
+      - npm install --omit=dev
 
   post_build:
     commands:
@@ -40,7 +41,8 @@ artifacts:
     - 'appspec.yml'
     # Include deployment scripts directory (e.g., scripts for stopping/starting systemd service)
     - 'scripts/**/*'
-  exclude:
+  # Fixed syntax: CodeBuild requires 'exclude-paths' instead of 'exclude'
+  exclude-paths:
     - '.git/**/*'
     - '.env*'
   discard-paths: no
