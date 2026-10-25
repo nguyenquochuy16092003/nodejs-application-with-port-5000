@@ -1,0 +1,51 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      # Node.js 20 is required because the app uses native global fetch and AbortSignal.timeout
+      nodejs: 20
+    commands:
+      - echo "===> Checking environment..."
+      - node -v
+      - npm -v
+
+  pre_build:
+    commands:
+      - echo "===> Preparing build..."
+      # Clean npm cache verify if needed
+      - npm cache verify
+
+  build:
+    commands:
+      - echo "===> Installing production dependencies..."
+      # Install only production dependencies (excludes nodemon) to keep the deployment artifact light
+      - npm ci --omit=dev
+
+  post_build:
+    commands:
+      - echo "===> Build finished successfully on $(date)"
+      # List top-level files to verify artifact structure before packaging
+      - ls -la
+
+artifacts:
+  files:
+    # Core application files
+    - 'index.js'
+    - 'package.json'
+    - 'package-lock.json'
+    # Include pre-built production node_modules so the EC2 instance doesn't need to run npm install
+    - 'node_modules/**/*'
+    # Required for AWS CodeDeploy to execute deployment hooks
+    - 'appspec.yml'
+    # Include deployment scripts directory (e.g., scripts for stopping/starting systemd service)
+    - 'scripts/**/*'
+  exclude:
+    - '.git/**/*'
+    - '.env*'
+  discard-paths: no
+
+cache:
+  paths:
+    # Cache npm cache directory to speed up dependency installation in future builds
+    - '/root/.npm/**/*'
